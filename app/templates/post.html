@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}{{ post.title }} - Flask Blog{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-9">
+<nav aria-label="breadcrumb"><ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Post</li></ol></nav>
+
+<article class="card border-0 shadow-sm mb-4"><div class="card-body p-4 p-md-5">
+  <h1 class="post-title mb-3">{{ post.title }}</h1>
+  <div class="d-flex align-items-center gap-3 mb-3">
+    {{ avatar(post.author, 44) }}
+    <div>
+      <a class="fw-semibold text-decoration-none" href="{{ url_for('main.profile', username=post.author.username) }}">{{ post.author.username }}</a>
+      <div class="text-muted small">{{ post.created_at.strftime('%b %d, %Y') }} &middot; {{ post.body|reading_time }} min read
+        {% if post.updated_at and (post.updated_at - post.created_at).total_seconds() > 1 %}&middot; edited {{ post.updated_at|timeago }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="mb-3">{% for t in post.tags %}<a class="tag-badge" href="{{ url_for('main.index', tag=t.name) }}">#{{ t.name }}</a> {% endfor %}</div>
+  <hr>
+  <div class="post-body">{{ post.body|safe }}</div>
+  {% if current_user.is_authenticated and current_user.id == post.user_id %}
+  <hr>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.edit_post', post_id=post.id) }}"><i class="bi bi-pencil"></i> Edit</a>
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash"></i> Delete</button>
+  </div>
+  {% endif %}
+</div></article>
+
+{% if related %}
+<h5 class="mb-3">Related posts</h5>
+<div class="row g-3 mb-4">
+  {% for r in related %}
+  <div class="col-md-4"><div class="card post-card h-100 shadow-sm"><div class="card-body">
+    <h6 class="card-title"><a href="{{ url_for('main.post_detail', post_id=r.id) }}">{{ r.title }}</a></h6>
+    <small class="text-muted">{{ r.author.username }} &middot; {{ r.created_at|timeago }}</small>
+  </div></div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section id="comments">
+  <h4 class="mb-3"><i class="bi bi-chat-left-text"></i> Comments ({{ post.comments|length }})</h4>
+  {% for c in post.comments %}
+    <div class="card comment border-0 shadow-sm mb-2"><div class="card-body py-3">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          {{ avatar(c.author, 28) }}
+          <a class="fw-semibold text-decoration-none" href="{{ url_for('main.profile', username=c.author.username) }}">{{ c.author.username }}</a>
+          <small class="text-muted">{{ c.created_at|timeago }}</small>
+        </div>
+        {% if current_user.is_authenticated and current_user.id in (c.user_id, post.user_id) %}
+        <form method="post" action="{{ url_for('main.delete_comment', comment_id=c.id) }}" onsubmit="return confirm('Delete this comment?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-link text-danger p-0" aria-label="Delete comment"><i class="bi bi-trash"></i></button>
+        </form>{% endif %}
+      </div>
+      <p class="mb-0" style="white-space: pre-line;">{{ c.body }}</p>
+    </div></div>
+  {% else %}<p class="text-muted">No comments yet. Be the first to comment!</p>{% endfor %}
+
+  {% if current_user.is_authenticated %}
+  <form method="post" action="{{ url_for('main.add_comment', post_id=post.id) }}" class="mt-3">
+    {{ form.hidden_tag() }}
+    <div class="mb-2">{{ form.body(class="form-control", rows=3, maxlength=1000, placeholder="Share your thoughts...") }}</div>
+    {{ form.submit(class="btn btn-primary") }}
+  </form>
+  {% else %}
+  <div class="alert alert-info mt-3 mb-0"><a href="{{ url_for('auth.login', next=request.path) }}">Log in</a> or <a href="{{ url_for('auth.register') }}">sign up</a> to join the discussion.</div>
+  {% endif %}
+</section>
+</div></div>
+
+{% if current_user.is_authenticated and current_user.id == post.user_id %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title">Delete post?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">This will permanently delete "{{ post.title }}" and all its comments.</div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger">Delete</button></form>
+  </div>
+</div></div></div>
+{% endif %}
+{% endblock %}

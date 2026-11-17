@@ -1,0 +1,46 @@
+{% macro avatar(user, size=40) %}
+<span class="avatar" style="width:{{ size }}px;height:{{ size }}px;font-size:{{ (size * 0.45)|int }}px;background:{{ user.username|avatar_color }}">{{ user.username[0] }}</span>
+{% endmacro %}
+
+{% macro field(f) %}
+<div class="mb-3">
+  {{ f.label(class="form-label") }}
+  {{ f(class="form-control" ~ (" is-invalid" if f.errors else ""), **kwargs) }}
+  {% for e in f.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro render_pagination(p, endpoint) %}
+{% if p.pages > 1 %}
+<nav aria-label="Pagination"><ul class="pagination justify-content-center">
+  <li class="page-item {{ 'disabled' if not p.has_prev }}">
+    <a class="page-link" href="{{ url_for(endpoint, page=p.prev_num, **kwargs) if p.has_prev else '#' }}">&laquo; Prev</a></li>
+  {% for n in p.iter_pages() %}
+    {% if n %}
+      <li class="page-item {{ 'active' if n == p.page }}"><a class="page-link" href="{{ url_for(endpoint, page=n, **kwargs) }}">{{ n }}</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+    {% endif %}
+  {% endfor %}
+  <li class="page-item {{ 'disabled' if not p.has_next }}">
+    <a class="page-link" href="{{ url_for(endpoint, page=p.next_num, **kwargs) if p.has_next else '#' }}">Next &raquo;</a></li>
+</ul></nav>
+{% endif %}
+{% endmacro %}
+
+{% macro post_card(post) %}
+<div class="card post-card mb-3 shadow-sm"><div class="card-body">
+  <div class="d-flex align-items-center gap-2 mb-2 small text-muted">
+    {{ avatar(post.author, 28) }}
+    <a class="fw-semibold text-decoration-none" href="{{ url_for('main.profile', username=post.author.username) }}">{{ post.author.username }}</a>
+    <span>&middot;</span><span title="{{ post.created_at.strftime('%b %d, %Y %H:%M') }}">{{ post.created_at|timeago }}</span>
+    <span>&middot;</span><span>{{ post.body|reading_time }} min read</span>
+  </div>
+  <h4 class="card-title"><a href="{{ url_for('main.post_detail', post_id=post.id) }}">{{ post.title }}</a></h4>
+  <p class="card-text text-body-secondary">{{ post.body|striptags|truncate(180) }}</p>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>{% for t in post.tags %}<a class="tag-badge" href="{{ url_for('main.index', tag=t.name) }}">#{{ t.name }}</a> {% endfor %}</div>
+    <span class="text-muted small"><i class="bi bi-chat-left-text"></i> {{ post.comments|length }}</span>
+  </div>
+</div></div>
+{% endmacro %}

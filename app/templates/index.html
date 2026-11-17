@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_pagination, post_card %}
+{% block content %}
+{% if not q and not tag and pagination.page == 1 %}
+<section class="hero mb-4 shadow-sm">
+  <div class="row align-items-center g-3">
+    <div class="col-md-7">
+      <h1 class="fw-bold mb-2">Write. Share. Discuss.</h1>
+      <p class="mb-3 opacity-75">A community blog where anyone can publish posts, tag them and join the conversation.</p>
+      {% if current_user.is_authenticated %}
+        <a class="btn btn-light" href="{{ url_for('main.create_post') }}"><i class="bi bi-pencil-square"></i> Write a post</a>
+      {% else %}
+        <a class="btn btn-light me-2" href="{{ url_for('auth.register') }}">Get started</a>
+        <a class="btn btn-outline-light" href="{{ url_for('auth.login') }}">Login</a>
+      {% endif %}
+    </div>
+    <div class="col-md-5"><div class="d-flex justify-content-around text-center">
+      <div><div class="stat">{{ stats.posts }}</div><div class="stat-label">Posts</div></div>
+      <div><div class="stat">{{ stats.authors }}</div><div class="stat-label">Authors</div></div>
+      <div><div class="stat">{{ stats.comments }}</div><div class="stat-label">Comments</div></div>
+    </div></div>
+  </div>
+</section>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="mb-0">
+        {% if q or tag %}{{ pagination.total }} result{{ '' if pagination.total == 1 else 's' }}
+          {% if q %}for "{{ q }}"{% endif %}{% if tag %} in #{{ tag }}{% endif %}
+        {% else %}Latest posts{% endif %}</h3>
+      {% if q or tag %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.index') }}"><i class="bi bi-x-lg"></i> Clear</a>{% endif %}
+    </div>
+    {% for post in pagination.items %}
+      {{ post_card(post) }}
+    {% else %}
+      <div class="text-center text-muted py-5"><i class="bi bi-search display-4"></i><p class="mt-2">No posts found.</p></div>
+    {% endfor %}
+    {{ render_pagination(pagination, 'main.index', q=q, tag=tag) }}
+  </div>
+  <div class="col-lg-4"><div class="sticky-side">
+    <div class="card shadow-sm border-0"><div class="card-body">
+      <h5 class="card-title"><i class="bi bi-tags"></i> Popular tags</h5>
+      {% for name, n in tags %}
+        <a class="tag-badge mb-1 {{ 'active' if name == tag }}" href="{{ url_for('main.index', tag=name, q=q or None) }}">#{{ name }} <small>({{ n }})</small></a>
+      {% else %}<span class="text-muted">No tags yet.</span>{% endfor %}
+    </div></div>
+  </div></div>
+</div>
+{% endblock %}

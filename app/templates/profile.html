@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_pagination, post_card, avatar %}
+{% block title %}{{ user.username }} - Flask Blog{% endblock %}
+{% block content %}
+<div class="card border-0 shadow-sm mb-4"><div class="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
+  {{ avatar(user, 88) }}
+  <div class="flex-grow-1">
+    <h2 class="mb-1">{{ user.username }}</h2>
+    <p class="text-muted mb-2">{{ user.bio or "This user hasn't written a bio yet." }}</p>
+    <div class="small text-muted">
+      <i class="bi bi-calendar3"></i> Joined {{ user.created_at.strftime('%b %Y') }} &middot;
+      <i class="bi bi-file-text"></i> {{ user.posts|length }} post{{ '' if user.posts|length == 1 else 's' }} &middot;
+      <i class="bi bi-chat-left-text"></i> {{ user.comments|length }} comment{{ '' if user.comments|length == 1 else 's' }}</div>
+  </div>
+  {% if current_user.is_authenticated and current_user.id == user.id %}
+  <a class="btn btn-outline-primary" href="{{ url_for('auth.settings') }}"><i class="bi bi-gear"></i> Edit profile</a>{% endif %}
+</div></div>
+<h4 class="mb-3">Posts by {{ user.username }}</h4>
+{% for post in pagination.items %}{{ post_card(post) }}
+{% else %}<p class="text-muted">No posts yet.</p>{% endfor %}
+{{ render_pagination(pagination, 'main.profile', username=user.username) }}
+{% endblock %}
